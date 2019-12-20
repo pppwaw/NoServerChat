@@ -17,10 +17,10 @@ def rtn(code: int, message: str):
     return json.dumps({"code": code, "message": message})
 
 
-async def auth(strjson) -> tuple:
+async def auth(str_json) -> tuple:
     try:
-        d = json.loads(strjson)
-    except:
+        d = json.loads(str_json)
+    except json.JSONDecodeError:
         return False, ""
     else:
         if "username" in d and "password" in d:
@@ -39,7 +39,7 @@ async def client():
                 r = await websocket.receive()
                 try:
                     dr = json.loads(r)
-                except:
+                except json.JSONDecodeError:
                     await websocket.send("NoJSON")
                 else:
                     await websocket.send(json.dumps(dr))
