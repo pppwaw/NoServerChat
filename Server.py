@@ -1,8 +1,14 @@
-from quart import Quart, websocket
-import json, asyncio, logging, sys
+import asyncio
+import json
+import logging
+import sys
+
 from hypercorn import Config
 from hypercorn.asyncio import serve
+from quart import Quart, websocket
+
 from .ServerTools import Tools
+
 app = Quart(__name__)
 up = {"asd": "123"}
 

@@ -1,4 +1,6 @@
-import json, logging, random
+import json
+import logging
+import random
 
 
 class Tools:
