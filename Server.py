@@ -2,7 +2,7 @@ from quart import Quart, websocket
 import json, asyncio, logging, sys
 from hypercorn import Config
 from hypercorn.asyncio import serve
-
+from .ServerTools import Tools
 app = Quart(__name__)
 up = {"asd": "123"}
 
@@ -15,7 +15,7 @@ async def auth(strjson) -> tuple:
     try:
         d = json.loads(strjson)
     except:
-        return (False, "")
+        return False, ""
     else:
         if "username" in d and "password" in d:
             if up[d["username"]] == d["password"]:
@@ -50,5 +50,5 @@ if __name__ == '__main__':
     config.access_logger = logger
     config.error_logger = logger
     config.use_reloader = True
+    tools = Tools(logger)
     asyncio.run(serve(app=app, config=config))
-    # app.run(host="0.0.0.0",port=5699,use_reloader=True)
