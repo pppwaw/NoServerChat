@@ -45,7 +45,7 @@ class Tools:
             return False, "Invalid password"
         return False, "Invalid username"
 
-    async def logout(self, username: str, sessionid: str) -> bool:
+    async def logout(self, sessionid: str) -> bool:
         if sessionid in self.session:
             del self.session[sessionid]
             return True
