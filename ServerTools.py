@@ -17,7 +17,7 @@ class Tools:
                 self.user_table_broken = False
             finally:
                 self.user = d
-        self.session = []
+        self.session = {}
         self.session_id = []
 
     # def serve(self, message: str):
@@ -40,14 +40,14 @@ class Tools:
         if username in self.user:
             if self.user[username] == password:
                 session_id = await self._generate_session_id()
-                self.session.append([username, session_id])
+                self.session[session_id]=username
                 return True, session_id
             return False, "Invalid password"
         return False, "Invalid username"
 
     async def logout(self, username: str, sessionid: str) -> bool:
-        if [username, sessionid] in self.session:
-            await self.session.remove([username, sessionid])
+        if sessionid in self.session:
+            del self.session[sessionid]
             return True
         return False
 

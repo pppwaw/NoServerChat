@@ -7,10 +7,9 @@ from hypercorn import Config
 from hypercorn.asyncio import serve
 from quart import Quart, websocket
 
-from .ServerTools import Tools
+from ServerTools import Tools
 
 app = Quart(__name__)
-up = {"asd": "123"}
 
 
 def rtn(code: int, message: str):
@@ -21,11 +20,10 @@ async def auth(str_json) -> tuple:
     try:
         d = json.loads(str_json)
     except json.JSONDecodeError:
-        return False, ""
+        return False, "NoJSON"
     else:
         if "username" in d and "password" in d:
-            if up[d["username"]] == d["password"]:
-                return True, d["username"]
+            return await tools.login(d["username"], d["password"])
 
 
 @app.websocket("/client")
@@ -40,11 +38,11 @@ async def client():
                 try:
                     dr = json.loads(r)
                 except json.JSONDecodeError:
-                    await websocket.send("NoJSON")
+                    await websocket.send(rtn(1, "NoJSON"))
                 else:
                     await websocket.send(json.dumps(dr))
         else:
-            await websocket.send(rtn(1, "Invalid username or password"))
+            await websocket.send(rtn(1, rt[1]))
 
 
 if __name__ == '__main__':
