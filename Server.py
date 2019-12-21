@@ -6,7 +6,6 @@ import sys
 from hypercorn import Config
 from hypercorn.asyncio import serve
 from quart import Quart, websocket
-
 from ServerTools import Tools
 
 app = Quart(__name__)
@@ -31,7 +30,9 @@ async def client():
     while True:
         r = await websocket.receive()
         rt = await auth(r)
+        logger.debug((r, rt))
         if rt[0]:
+            websocket.send(rtn(0, rt[1]))
             print(rt[1], "Login!")
             while True:
                 r = await websocket.receive()
@@ -40,7 +41,11 @@ async def client():
                 except json.JSONDecodeError:
                     await websocket.send(rtn(1, "NoJSON"))
                 else:
-                    await websocket.send(json.dumps(dr))
+                    rt = tools.serve(dr)
+                    await websocket.send(rtn(int(rt[0]), rt[1]))
+                    if rt[1] == "break":
+                        break
+
         else:
             await websocket.send(rtn(1, rt[1]))
 

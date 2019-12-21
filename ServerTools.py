@@ -17,39 +17,40 @@ class Tools:
                 self.user_table_broken = False
             finally:
                 self.user = d
+                logger.debug(self.user)
         self.session = {}
         self.session_id = []
 
-    # def serve(self, message: str):
-    #     d = json.loads(message)
-    #     kwargs = {}
-    #     if "action" in d:
-    #         if d["action"] in self.__dir__():
-    #             args = locals()[d["action"]].__code__.co_varnames
-    #             for i in args:
-    #                 if i in d:
-    #                     kwargs[i] = d[i]
-    #                 else:
-    #                     return False, "Error arg {}".format(i)
-    #             return locals()[d["action"]](**kwargs)
-    #
-    #     else:
-    #         return False, "No action"
+    def serve(self, message: str):
+        d = json.loads(message)
+        kwargs = {}
+        if "action" in d:
+            if d["action"] in self.__dir__():
+                args = locals()[d["action"]].__code__.co_varnames
+                for i in args:
+                    if i in d:
+                        kwargs[i] = d[i]
+                    else:
+                        return False, "Error arg {}".format(i)
+                return locals()[d["action"]](**kwargs)
+
+        else:
+            return False, "No action"
 
     async def login(self, username, password) -> (bool, str):
         if username in self.user:
-            if self.user[username] == password:
+            if self.user[username]["password"] == password:
                 session_id = await self._generate_session_id()
                 self.session[session_id]=username
                 return True, session_id
             return False, "Invalid password"
         return False, "Invalid username"
 
-    async def logout(self, sessionid: str) -> bool:
-        if sessionid in self.session:
-            del self.session[sessionid]
-            return True
-        return False
+    async def logout(self, session_id: str) -> (bool,str):
+        if session_id in self.session:
+            del self.session[session_id]
+            return True,"break"
+        return False,"No session"
 
     async def adduser(self, username: str, password: str):
         a = {"password": password}
