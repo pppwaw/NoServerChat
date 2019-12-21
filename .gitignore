@@ -131,9 +131,5 @@ dmypy.json
 .pyre/
 
 .DS_Store
-.idea/.gitignore
-.idea/NoServerChat.iml
-.idea/inspectionProfiles/
-.idea/misc.xml
-.idea/modules.xml
-.idea/vcs.xml
+.idea/
+user.json
