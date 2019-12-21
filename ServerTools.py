@@ -75,3 +75,6 @@ class Tools:
             r = str(random.randint(0000000000, 9999999999)).zfill(10)
             if r not in self.session_id:
                 return r
+
+    async def test(self):
+        raise RuntimeError("Test")
