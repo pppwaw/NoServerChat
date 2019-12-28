@@ -25,15 +25,16 @@ async def auth(str_json) -> tuple:
             return await tools.login(d["username"], d["password"])
 
 
-@app.websocket("/client")
-async def client():
+@app.websocket("/client/send")
+async def recv():
     while True:
         r = await websocket.receive()
         rt = await auth(r)
         logger.debug((r, rt))
         if rt[0]:
-            await websocket.send(rtn(0, rt[1]))
-            print(rt[1], "Login!")
+            session_id = rt[1]
+            await websocket.send(rtn(0, session_id))
+            print(tools.session[session_id], "Login!")
             while True:
                 r = await websocket.receive()
                 try:
@@ -41,12 +42,29 @@ async def client():
                 except json.JSONDecodeError:
                     await websocket.send(rtn(1, "NoJSON"))
                 else:
+
                     re = await tools.serve(dr, rt[1])
-                    await websocket.send(rtn(int(re[0]), re[1]))
-                    if rt[1] == "\'break\'":
+                    if dr["action"] == "\'break\'":
                         break
+                    await websocket.send(rtn(int(re[0]), re[1]))
+
         else:
             await websocket.send(rtn(1, rt[1]))
+
+
+@app.websocket("/client/recv/<session_id>")
+async def send(session_id):
+    print(session_id)
+    if session_id not in tools.session_id:
+        await websocket.send(rtn(1, "No Login"))
+    else:
+        await websocket.send(rtn(0, "Ok"))
+        if await websocket.receive() == rtn(0, "Ok"):
+            queue = tools.queues[session_id]
+            while True:
+                if session_id in tools.session_id:
+                    r = queue.get()
+                    websocket.send(r)
 
 
 if __name__ == '__main__':
