@@ -42,9 +42,10 @@ async def recv():
                 except json.JSONDecodeError:
                     await websocket.send(rtn(1, "NoJSON"))
                 else:
-
+                    if dr["action"] == "logout":
+                        dr["session_id"] = session_id
                     re = await tools.serve(dr, rt[1])
-                    if dr["action"] == "\'break\'":
+                    if re[1] == "break":
                         break
                     await websocket.send(rtn(int(re[0]), re[1]))
 
@@ -54,17 +55,16 @@ async def recv():
 
 @app.websocket("/client/recv/<session_id>")
 async def send(session_id):
-    print(session_id)
+    print(type(session_id))
     if session_id not in tools.session_id:
         await websocket.send(rtn(1, "No Login"))
     else:
         await websocket.send(rtn(0, "Ok"))
-        if await websocket.receive() == rtn(0, "Ok"):
-            queue = tools.queues[session_id]
-            while True:
-                if session_id in tools.session_id:
-                    r = queue.get()
-                    websocket.send(r)
+        queue = tools.queues[session_id]
+        while True:
+            if session_id in tools.session_id:
+                r = await queue.get()
+                await websocket.send(r)
 
 
 if __name__ == '__main__':

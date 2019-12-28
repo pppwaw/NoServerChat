@@ -31,14 +31,12 @@ class Tools:
         if "action" in message:
             if message["action"] in self.superfunc and self.session[session_id] not in self.super:
                 return False, "Permission denied"
-            if message["action"] == "send":
-                call = self.send
-            elif message["action"] == "logout":
-                call = self.logout
-            else:
+            if not hasattr(self, (message["action"])):
                 return False, "Error action"
+            else:
+                call = getattr(self, message["action"])
             del message["action"]
-            for i in message:
+            for i in message.keys():
                 kwargs[i] = message[i]
             try:
                 r = await call(**kwargs)
@@ -54,6 +52,7 @@ class Tools:
         if username in self.user:
             if self.user[username]["password"] == password:
                 session_id = await self._generate_session_id()
+                self.session_id.append(session_id)
                 self.session[session_id] = username
                 self.queues[session_id] = asyncio.Queue()
                 return True, session_id
@@ -86,8 +85,9 @@ class Tools:
                 return r
 
     async def send(self, message):
-        for i, j in self.queues:
-            j.put(message)
+        for i, j in self.queues.items():
+            await j.put(message)
+        return len(self.queues)
 
     async def test(self):
         raise RuntimeError("Test")
