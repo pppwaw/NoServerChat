@@ -5,12 +5,15 @@ import asyncio
 
 
 class Tools:
-    def __init__(self, logger: logging.Logger):
+    def __init__(self, logger: logging.Logger, user_table: str):
         """
         初始化tools，从user.json加载用户表，需要一个logger来打印信息
+
         :param logger:
+        :param user_table:用户表的名称
         """
         self.logger = logger
+        self.user_table = user_table
         with open("user.json") as f:
             try:
                 d = json.loads(f.read())
@@ -32,6 +35,7 @@ class Tools:
     async def serve(self, message: dict) -> (bool, str):
         """
         对用户发来的信息进行处理，返回失败与否，若成功会返回结果，若失败会反悔原因
+
         :param message:
         :return: 失败与否，若成功会返回结果，若失败会返回原因
         """
@@ -60,6 +64,7 @@ class Tools:
     async def login(self, username, password) -> (bool, str):
         """
         登录，返回成功与否，若成功会返回session_id，若失败会返回原因
+
         :param username: 用户名
         :param password: 密码
         :return: session_id或原因
@@ -77,6 +82,7 @@ class Tools:
     async def logout(self, session_id: str) -> (bool, str):
         """
         登出，返回成功与否，若成功会返回特定字符串break，若失败会返回原因（目前只有无session）
+
         :param session_id:
         :return: 原因或break
         """
@@ -90,9 +96,10 @@ class Tools:
     async def adduser(self, username: str, password: str, session_id: str = None) -> (bool, str):
         """
         在用户表中新增用户
-        :param username:用户名
-        :param password:密码
-        :return:成功与否，若成功会返回用户信息(json)，失败会返回原因
+
+        :param username: 用户名
+        :param password: 密码
+        :return: 成功与否，若成功会返回用户信息(json)，失败会返回原因
         """
         if username not in self.user:
             a = {"password": password}
@@ -103,6 +110,7 @@ class Tools:
     async def save(self, session_id: str = None) -> (bool, str):
         """
         保存用户表（目前到user.json）
+
         :return: 是否保存成功，若没保存成功会有原因（若用户表加载失败为保险起见则不可保存）
         """
         try:
@@ -116,6 +124,7 @@ class Tools:
 
     async def _generate_session_id(self) -> str:
         """
+
         不要在外部调用！
         :return: 生成的session_id
         """
@@ -128,8 +137,9 @@ class Tools:
         """
         把消息发送给（暂时为所有人）
         格式为[{"action":"text","data":"message"},...]
-        :param message:发送的消息
-        :return: 发送的人数
+
+        :param message: 发送的消息
+        :return:  发送的人数
         """
         if not isinstance(message, list):
             return False, "message not list"
