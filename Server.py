@@ -12,7 +12,7 @@ app = Quart(__name__)
 
 
 def rtn(code: int, message: str):
-    return json.dumps({"code": code, "message": message})
+    return json.dumps({"code": code, "message": str(message)})
 
 
 async def auth(str_json) -> tuple:
@@ -42,9 +42,8 @@ async def recv():
                 except json.JSONDecodeError:
                     await websocket.send(rtn(1, "NoJSON"))
                 else:
-                    if dr["action"] == "logout":
-                        dr["session_id"] = session_id
-                    re = await tools.serve(dr, rt[1])
+                    dr["session_id"] = session_id
+                    re = await tools.serve(dr)
                     if re[1] == "break":
                         break
                     await websocket.send(rtn(int(re[0]), re[1]))
