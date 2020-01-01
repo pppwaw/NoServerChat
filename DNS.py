@@ -29,11 +29,11 @@ def add():
             addrs.append({"name": form["name"], "ips": form["ips"]})
         except:
             if "name" not in form:
-                return msg(2, "no name")
+                return msg(1, "no name")
             elif "ips" not in form:
-                return msg(2, "no ips")
+                return msg(1, "no ips")
             else:
-                return msg(-1, "Unknown Error")
+                return msg(1, "Unknown Error")
     print(form)
     return msg()
 

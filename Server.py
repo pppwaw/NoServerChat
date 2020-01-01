@@ -46,7 +46,7 @@ async def recv():
                     re = await tools.serve(dr)
                     if re[1] == "break":
                         break
-                    await websocket.send(rtn(int(re[0]), re[1]))
+                    await websocket.send(rtn(int(not re[0]), re[1]))
 
         else:
             await websocket.send(rtn(1, rt[1]))
@@ -54,7 +54,6 @@ async def recv():
 
 @app.websocket("/client/recv/<session_id>")
 async def send(session_id):
-    print(type(session_id))
     if session_id not in tools.session_id:
         await websocket.send(rtn(1, "No Login"))
     else:
@@ -75,5 +74,5 @@ if __name__ == '__main__':
     config.access_logger = logger
     config.error_logger = logger
     config.use_reloader = True
-    tools = Tools(logger)
+    tools = Tools(logger, "user.json")
     asyncio.run(serve(app=app, config=config))

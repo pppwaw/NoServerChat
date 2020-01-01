@@ -14,7 +14,7 @@ class Tools:
         """
         self.logger = logger
         self.user_table = user_table
-        with open("user.json") as f:
+        with open(user_table) as f:
             try:
                 d = json.loads(f.read())
             except:
@@ -56,7 +56,7 @@ class Tools:
             except Exception as e:
                 return False, repr(e)
             else:
-                return True, r[1:]
+                return True, r
 
         else:
             return False, "No action"
@@ -115,7 +115,7 @@ class Tools:
         """
         try:
             if not self.user_table_broken:
-                with open("user.json", "w") as f:
+                with open(self.user_table, "w") as f:
                     f.write(json.dumps(self.user))
                     return True, ""
             return False, "User table is broken"
