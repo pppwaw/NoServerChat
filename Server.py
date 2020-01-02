@@ -11,8 +11,8 @@ from ServerTools import Tools
 app = Quart(__name__)
 
 
-def rtn(code: int, message: str):
-    return json.dumps({"code": code, "message": str(message)})
+def rtn(code: int = 0, message: str = "OK"):
+    return json.dumps({"code": code, "message": message})
 
 
 async def auth(str_json) -> tuple:
@@ -57,12 +57,17 @@ async def send(session_id):
     if session_id not in tools.session_id:
         await websocket.send(rtn(1, "No Login"))
     else:
-        await websocket.send(rtn(0, "Ok"))
+        await websocket.send(rtn())
         queue = tools.queues[session_id]
         while True:
             if session_id in tools.session_id:
                 r = await queue.get()
                 await websocket.send(r)
+
+
+@app.websocket("/server")
+async def server():
+    pass
 
 
 if __name__ == '__main__':

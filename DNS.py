@@ -7,42 +7,42 @@ app = Quart(__name__)
 addrs = []
 
 
-def msg(code: int = 0, message: str = "OK"):
+def rtn(code: int = 0, message: str = "OK"):
     return json.dumps({"code": code, "message": message})
 
 
 @app.route("/dns")
-def dns():
+async def dns():
     return json.dumps(addrs)
 
 
-@app.route("/add")
-def add():
+@app.route("/dns/add", ["GET", "POST"])
+async def add():
     # form = {}
-    form = (request.get_data()).decode(encoding="UTF-8")
+    form = (await request.get_data()).decode(encoding="UTF-8")
     try:
         form = json.loads(form)
     except:
-        return msg(1, "noJSON")
+        return rtn(1, "noJSON")
     else:
         try:
-            addrs.append({"name": form["name"], "ips": form["ips"]})
+            addrs.append({"name": form["name"], "ipv6": form["ipv6"], "ipv4": form["ipv4"]})
         except:
             if "name" not in form:
-                return msg(1, "no name")
-            elif "ips" not in form:
-                return msg(1, "no ips")
+                return rtn(1, "no name")
+            elif "ipv6" not in form:
+                return rtn(1, "no ipv6")
+            elif "ipv4" not in form:
+                return rtn(1, "no ipv4")
             else:
-                return msg(1, "Unknown Error")
-    print(form)
-    return msg()
+                return rtn(1, "Unknown Error")
+    return rtn()
 
 
 if __name__ == '__main__':
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
     logger.addHandler(logging.StreamHandler(sys.stdout))
-
     config = Config()
     config.bind = ["0.0.0.0:5699", ":::5699"]
     config.access_logger = logger
