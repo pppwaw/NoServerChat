@@ -153,7 +153,7 @@ class ClientTools:
 
 
 class ServerTools:
-    def __init__(self, logger=logging.Logger):
+    def __init__(self, logger: logging.Logger):
         self.server = {}
         self.logger = logger
 
@@ -169,9 +169,12 @@ class ServerTools:
             servers = self.server.keys()
         if not isinstance(message, dict):
             return False, "message not dict"
+        x = 0
         for i in servers:
             try:
                 await self.server[i].put(message)
             except Exception as e:
-                self.logger.error(str(e))
-        return True, str(len(servers))
+                self.logger.error(repr(e))
+            else:
+                x += 1
+        return True, str(x)
