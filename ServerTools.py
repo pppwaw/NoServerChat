@@ -153,11 +153,25 @@ class ClientTools:
 
 
 class ServerTools:
-    def __init__(self):
+    def __init__(self, logger=logging.Logger):
         self.server = {}
+        self.logger = logger
 
-    def join(self, name) -> (bool, str):
+    async def join(self, name) -> (bool, str):
         if name not in self.server:
             self.server[name] = asyncio.Queue()
             return True, ""
         return False, "server exist"
+
+    async def send(self, message: dict, servers: list = None) -> (bool, str):
+
+        if servers is None:
+            servers = self.server.keys()
+        if not isinstance(message, dict):
+            return False, "message not dict"
+        for i in servers:
+            try:
+                await self.server[i].put(message)
+            except Exception as e:
+                self.logger.error(str(e))
+        return True, str(len(servers))

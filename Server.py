@@ -89,5 +89,5 @@ if __name__ == '__main__':
     config.error_logger = logger
     config.use_reloader = True
     ctools = ClientTools(logger, "user.json")
-    stools = ServerTools()
+    stools = ServerTools(logger)
     asyncio.run(serve(app=app, config=config))
