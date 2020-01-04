@@ -6,7 +6,7 @@ import sys
 from hypercorn import Config
 from hypercorn.asyncio import serve
 from quart import Quart, websocket
-from ServerTools import Tools
+from ServerTools import ClientTools
 
 app = Quart(__name__)
 
@@ -79,5 +79,5 @@ if __name__ == '__main__':
     config.access_logger = logger
     config.error_logger = logger
     config.use_reloader = True
-    tools = Tools(logger, "user.json")
+    tools = ClientTools(logger, "user.json")
     asyncio.run(serve(app=app, config=config))

@@ -4,7 +4,7 @@ import random
 import asyncio
 
 
-class Tools:
+class ClientTools:
     def __init__(self, logger: logging.Logger, user_table: str):
         """
         初始化tools，从user.json加载用户表，需要一个logger来打印信息
@@ -150,3 +150,8 @@ class Tools:
             return True, str(len(self.queues))
         except Exception as e:
             return False, str(e)
+
+
+class ServerTools:
+    def __init__(self):
+        self.server = {}
