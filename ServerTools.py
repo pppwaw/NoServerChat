@@ -155,3 +155,9 @@ class ClientTools:
 class ServerTools:
     def __init__(self):
         self.server = {}
+
+    def join(self, name) -> (bool, str):
+        if name not in self.server:
+            self.server[name] = asyncio.Queue()
+            return True, ""
+        return False, "server exist"

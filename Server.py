@@ -6,7 +6,7 @@ import sys
 from hypercorn import Config
 from hypercorn.asyncio import serve
 from quart import Quart, websocket
-from ServerTools import ClientTools
+from ServerTools import ClientTools, ServerTools
 
 app = Quart(__name__)
 
@@ -22,11 +22,11 @@ async def auth(str_json) -> tuple:
         return False, "NoJSON"
     else:
         if "username" in d and "password" in d:
-            return await tools.login(d["username"], d["password"])
+            return await ctools.login(d["username"], d["password"])
 
 
 @app.websocket("/client/send")
-async def recv():
+async def client_recv():
     while True:
         r = await websocket.receive()
         rt = await auth(r)
@@ -34,7 +34,7 @@ async def recv():
         if rt[0]:
             session_id = rt[1]
             await websocket.send(rtn(0, session_id))
-            print(tools.session[session_id], "Login!")
+            print(ctools.session[session_id], "Login!")
             while True:
                 r = await websocket.receive()
                 try:
@@ -43,7 +43,7 @@ async def recv():
                     await websocket.send(rtn(1, "NoJSON"))
                 else:
                     dr["session_id"] = session_id
-                    re = await tools.serve(dr)
+                    re = await ctools.serve(dr)
                     if re[1] == "break":
                         break
                     await websocket.send(rtn(int(not re[0]), re[1]))
@@ -53,21 +53,30 @@ async def recv():
 
 
 @app.websocket("/client/recv/<session_id>")
-async def send(session_id):
-    if session_id not in tools.session_id:
+async def client_send(session_id):
+    if session_id not in ctools.queues:
         await websocket.send(rtn(1, "No Login"))
     else:
         await websocket.send(rtn())
-        queue = tools.queues[session_id]
+        queue = ctools.queues[session_id]
         while True:
-            if session_id in tools.session_id:
+            if session_id in ctools.queues:
                 r = await queue.get()
                 await websocket.send(r)
 
 
-@app.websocket("/server")
-async def server():
+@app.websocket("/server/send")
+async def server_recv():
     pass
+
+
+@app.websocket("/server/recv/<name>")
+async def server_send(name):
+    if name in stools.server:
+        queue = stools.server[name]
+        while True:
+            r = await queue.get()
+            await websocket.send(r)
 
 
 if __name__ == '__main__':
@@ -79,5 +88,6 @@ if __name__ == '__main__':
     config.access_logger = logger
     config.error_logger = logger
     config.use_reloader = True
-    tools = ClientTools(logger, "user.json")
+    ctools = ClientTools(logger, "user.json")
+    stools = ServerTools()
     asyncio.run(serve(app=app, config=config))
