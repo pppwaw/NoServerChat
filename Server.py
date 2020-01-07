@@ -2,11 +2,14 @@ import asyncio
 import json
 import logging
 import sys
-
+import time
+import quart
 from hypercorn import Config
 from hypercorn.asyncio import serve
-from quart import Quart, websocket
+from quart import Quart, websocket, Blueprint
 from ServerTools import ClientTools, ServerTools
+
+websocket: quart.wrappers.request.Websocket
 
 app = Quart(__name__)
 
@@ -33,17 +36,19 @@ async def client_recv():
         logger.debug((r, rt))
         if rt[0]:
             session_id = rt[1]
+            name = ctools.session_id[session_id]
             await websocket.send(rtn(0, session_id))
-            print(ctools.session[session_id], "Login!")
+            print(name, "Login!")
+            queue = ctools.queues[name]
             while True:
                 r = await websocket.receive()
+                print(r)
                 try:
                     dr = json.loads(r)
                 except json.JSONDecodeError:
                     await websocket.send(rtn(1, "NoJSON"))
                 else:
-                    dr["session_id"] = session_id
-                    re = await ctools.serve(dr)
+                    re = await ctools.serve(dr, name)
                     if re[1] == "break":
                         break
                     await websocket.send(rtn(int(not re[0]), re[1]))
@@ -52,31 +57,68 @@ async def client_recv():
             await websocket.send(rtn(1, rt[1]))
 
 
-@app.websocket("/client/recv/<session_id>")
-async def client_send(session_id):
-    if session_id not in ctools.queues:
-        await websocket.send(rtn(1, "No Login"))
-    else:
+@app.websocket("/client/recv/<name>")
+async def client_send(name):
+    if name in ctools.user:
         await websocket.send(rtn())
-        queue = ctools.queues[session_id]
+        queue = ctools.user[name]
         while True:
-            if session_id in ctools.queues:
-                r = await queue.get()
-                await websocket.send(r)
+            r = await queue.get()
+            await websocket.send(json.dumps(r))
+    else:
+        await websocket.send(rtn(1, "No Login"))
 
 
 @app.websocket("/server/send")
 async def server_recv():
-    pass
+    while True:
+        r = await websocket.receive()
+        try:
+            rt = json.loads(r)
+        except:
+            await websocket.send(json.dumps(rtn(1, "NoJSON")))
+        else:
+            if "name" in rt:
+                j = await stools.join(rt["name"])
+                if j[0]:
+                    name = rt["name"]
+                    await websocket.send(rtn(0, stools.name))
+                    print(name, "Join!")
+                    queue = stools.server[name]
+                    while True:
+                        r = await websocket.receive()
+                        try:
+                            dr = json.loads(r)
+                        except json.JSONDecodeError:
+                            await websocket.send(rtn(1, "NoJSON"))
+                        else:
+                            re = await stools.serve(dr, name)
+                            if re[1] == "break":
+                                break
+                            await websocket.send(rtn(int(not re[0]), re[1]))
+                else:
+                    await websocket.send(rtn(not j[0], j[1]))
+            else:
+                await websocket.send(rtn(1, "No name"))
 
 
 @app.websocket("/server/recv/<name>")
 async def server_send(name):
     if name in stools.server:
+        await websocket.send(rtn())
         queue = stools.server[name]
         while True:
             r = await queue.get()
-            await websocket.send(r)
+            await websocket.send(json.dumps(r))
+    else:
+        await websocket.send(rtn(1, "No Join"))
+
+
+def get_tools(user_table, logger):
+    ctools = ClientTools(user_table, logger)
+    stools = ServerTools("pppwaw", ctools, logger)
+    ctools.set_stools(stools)
+    return ctools, stools
 
 
 if __name__ == '__main__':
@@ -87,7 +129,6 @@ if __name__ == '__main__':
     config.bind = ["0.0.0.0:5700", ":::5700"]
     config.access_logger = logger
     config.error_logger = logger
-    config.use_reloader = True
-    ctools = ClientTools(logger, "user.json")
-    stools = ServerTools(logger)
+    config.use_reloader = False
+    ctools, stools = get_tools("user.json", logger)
     asyncio.run(serve(app=app, config=config))

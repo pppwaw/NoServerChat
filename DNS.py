@@ -26,6 +26,9 @@ async def add():
         return rtn(1, "noJSON")
     else:
         try:
+            for i in addrs:
+                if i["name"] == form["name"]:
+                    return rtn(1, "exist")
             addrs.append({"name": form["name"], "ipv6": form["ipv6"], "ipv4": form["ipv4"]})
         except:
             if "name" not in form:
