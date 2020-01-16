@@ -1,13 +1,16 @@
 import asyncio
+import threading
 import json
 import logging
 import sys
 import time
+import multiprocessing
+
 import quart
 from hypercorn import Config
 from hypercorn.asyncio import serve
 from quart import Quart, websocket, Blueprint
-from ServerTools import ClientTools, ServerTools
+from ServerTools import *
 
 websocket: quart.wrappers.request.Websocket
 
@@ -84,7 +87,6 @@ async def server_recv():
                     name = rt["name"]
                     await websocket.send(rtn(0, stools.name))
                     print(name, "Join!")
-                    queue = stools.server[name]
                     while True:
                         r = await websocket.receive()
                         try:
@@ -116,9 +118,11 @@ async def server_send(name):
 
 def get_tools(user_table, logger):
     ctools = ClientTools(user_table, logger)
-    stools = ServerTools("pppwaw", ctools, logger)
-    ctools.set_stools(stools)
-    return ctools, stools
+    sstools = ServerSTools("pppwaw", ctools, logger)
+    sctools = ServerCTools(sstools, logger)
+    ctools.set_stools(sstools)
+    sstools.set_url_queue(sctools.urlqueue)
+    return ctools, sstools, sctools
 
 
 if __name__ == '__main__':
@@ -130,5 +134,9 @@ if __name__ == '__main__':
     config.access_logger = logger
     config.error_logger = logger
     config.use_reloader = False
-    ctools, stools = get_tools("user.json", logger)
-    asyncio.run(serve(app=app, config=config))
+    ctools, stools, sctools = get_tools("user.json", logger)
+    web = lambda: asyncio.run(serve(app=app, config=config))
+    sts = lambda: sctools.main()  # servertoserver
+    pool = [multiprocessing.Process(target=web), multiprocessing.Process(target=sts)]
+    [i.start() for i in pool]
+    [i.join() for i in pool]

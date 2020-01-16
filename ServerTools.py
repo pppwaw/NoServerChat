@@ -1,7 +1,11 @@
+import asyncio
 import json
 import logging
 import random
-import asyncio
+import threading
+
+import websocket
+import aioprocessing
 import time
 
 
@@ -83,7 +87,7 @@ class ClientTools(BaseTools):
                     self.session[username] = []
                 self.session[username].append(session_id)
                 if username not in self.queues:
-                    self.queues[username] = asyncio.Queue()
+                    self.queues[username] = aioprocessing.Queue()
                 return True, session_id
             return False, "Invalid password"
         return False, "Invalid username"
@@ -173,7 +177,7 @@ def makertn(sync_id, message, **kwargs):
     return mb
 
 
-class ServerTools(BaseTools):
+class ServerSTools(BaseTools):
     def __init__(self, name: str, ctools: ClientTools, logger: logging.Logger = logging.getLogger("Server")):
         super().__init__(logger)
         self.server = {}
@@ -182,9 +186,12 @@ class ServerTools(BaseTools):
         self.name = name
         self.sync = {}
 
+    def set_url_queue(self, queue: aioprocessing.Queue):
+        self.urlqueue = queue
+
     async def join(self, name) -> (bool, str):
         if name not in self.server:
-            self.server[name] = asyncio.Queue()
+            self.server[name] = aioprocessing.Queue()
             return True, ""
         return False, "server exist"
 
@@ -221,7 +228,7 @@ class ServerTools(BaseTools):
         while True:
             if x in self.sync:
                 continue
-            self.sync[x] = asyncio.Queue()
+            self.sync[x] = aioprocessing.Queue()
             return x, self.sync[x]
 
     async def find_user(self, username, sync_id, name, **kwargs):
@@ -254,3 +261,36 @@ class ServerTools(BaseTools):
                     if time.time() - t >= 30:
                         await self.send(makertn(sync_id, None), [name])
                         return False, "time out"
+
+
+class ServerCTools:
+    def __init__(self, stools: ServerSTools, logger: logging.Logger):
+        self.stools = stools
+        self.urlqueue = aioprocessing.Queue()
+        self.session = {}
+        self.logger = logger
+
+    async def get_ws(self):
+        while True:
+            try:
+                url = self.urlqueue.get_nowait()
+            except:
+                pass
+            else:
+                try:
+                    w = websocket.create_connection(url)
+                except:
+                    pass
+                else:
+                    pass
+
+    async def ping(self):
+        await asyncio.sleep(10)
+        self.logger.debug(1)
+
+    def main(self):
+        ping = lambda: asyncio.run(self.ping())
+        getws = lambda: asyncio.run(self.get_ws())
+        pool = [threading.Thread(target=ping), threading.Thread(target=getws)]
+        [i.start() for i in pool]
+        [i.join() for i in pool]
